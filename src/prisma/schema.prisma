@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  
+}
+
+// ENUMS
+
+enum Permissions {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  ALL
+}
+
+enum AccountType {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+  TRIAL
+  DEMO
+  TEST
+}
+
+enum Role {
+  ADMIN
+  SUPER_ADMIN
+  USER
+  SALES
+  SUPPORT
+  HR
+  VERIFIER
+  ACCOUNTANT
+  MANAGER
+  DELIVERY
+  DISPATCH
+  DISPATCHER
+  DISPATCH_MANAGER
+}
+
+
+// Models
+
+// User Model
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  name                String?
+  email               String    @unique
+  password            String?
+  username            String    @unique
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt @db.Timestamp()
+  role                Role      @default(USER)
+  defaultShippingAddr Int?
+  defaultBillingAddr  Int?
+  address             Address[] //One to many
+  // A user can have only one company and a company belongs to a user but a company can have multiple users
+
+  company           Company[] //One to many
+  accountType       AccountType   @default(TRIAL)
+  permissions       Permissions[] @default([READ])
+  logginTime        DateTime?     @default(now())
+  logoutTime        DateTime?     
+  userApiLogs       UserApiLogs[]
+  autoLoggedOut     Boolean       @default(false)
+  autoLoggedOutTime DateTime?
+  isVerified        Boolean       @default(false)
+  isDeleted         Boolean       @default(false)
+  isBlocked         Boolean       @default(false)
+  isSuspended       Boolean       @default(false)
+  isDisabled        Boolean       @default(false)
+  isDeactivated     Boolean       @default(false)
+  Company           Company[]     @relation("CreatedBy")
+
+  @@unique([email, username], name: "email_username_unique")
+  // create views and indexes for the user table
+  @@index([name], name: "name_index")
+  @@index([email], name: "company_email_index")
+  @@index([username], name: "username_index")
+  @@index([role], name: "role_index")
+  @@index([accountType], name: "accountType_index")
+  @@index([isVerified], name: "isVerified_index")
+  @@map("users")
+}
+
+// Address Model
+model Address {
+  id      Int     @id @default(autoincrement())
+  lineOne String
+  lineTwo String? //Optional
+  city    String
+  state   String
+  country String
+  pincode String
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @db.Timestamp()
+
+  @@map("addresses")
+}
+
+// Api Logs for automatic logout system
+model UserApiLogs {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  url       String
+  method    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @db.Timestamp()
+
+  @@map("user_api_logs")
+}
+
+// Company Model
+
+model Company {
+  id        Int     @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String
+  type  AccountType @default(TRIAL)
+  address   String?
+  city      String?
+  state     String?
+  country   String?
+  pincode   String?
+  userId    Int
+  createdBy User    @relation("CreatedBy", fields: [userId], references: [id])
+  User User[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt @db.Timestamp()
+  isVerified Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  isBlocked  Boolean  @default(false)
+
+  @@map("companies")
+}

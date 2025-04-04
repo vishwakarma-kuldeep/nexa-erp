@@ -1,0 +1,6 @@
+node_modules
+
+.env
+prisma/.env
+prisma/.env.development
+
