@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  
 }
 
 // ENUMS
@@ -28,120 +27,314 @@ enum AccountType {
   TEST
 }
 
-enum Role {
-  ADMIN
-  SUPER_ADMIN
-  USER
-  SALES
-  SUPPORT
-  HR
-  VERIFIER
-  ACCOUNTANT
-  MANAGER
-  DELIVERY
-  DISPATCH
-  DISPATCHER
-  DISPATCH_MANAGER
-}
+// MODELS
 
-
-// Models
-
-// User Model
-
+/**
+ * User Model
+ */
 model User {
-  id                  Int       @id @default(autoincrement())
-  name                String?
-  email               String    @unique
-  password            String?
-  username            String    @unique
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt @db.Timestamp()
-  role                Role      @default(USER)
-  defaultShippingAddr Int?
-  defaultBillingAddr  Int?
-  address             Address[] //One to many
-  // A user can have only one company and a company belongs to a user but a company can have multiple users
+  id        Int       @id @default(autoincrement())
+  name      String?
+  email     String?   @unique
+  role      Roles     @relation(fields: [roleId], references: [id])
+  roleId    Int
+  password  String?
+  status    Boolean?  @default(true)
+  lastLogin DateTime?
 
-  company           Company[] //One to many
-  accountType       AccountType   @default(TRIAL)
-  permissions       Permissions[] @default([READ])
-  logginTime        DateTime?     @default(now())
-  logoutTime        DateTime?     
-  userApiLogs       UserApiLogs[]
-  autoLoggedOut     Boolean       @default(false)
-  autoLoggedOutTime DateTime?
-  isVerified        Boolean       @default(false)
-  isDeleted         Boolean       @default(false)
-  isBlocked         Boolean       @default(false)
-  isSuspended       Boolean       @default(false)
-  isDisabled        Boolean       @default(false)
-  isDeactivated     Boolean       @default(false)
-  Company           Company[]     @relation("CreatedBy")
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  activityLogs        ActivityLog[]
+  activeTwoFactor     Boolean?            @default(false)
+  twoFactorCode       String?
+  twoFactorCodeExpiry DateTime?
+  loginHistories      LoginHistory[]
+  reports             Report[]
+  permissions         Permissions[]
+  accountType         AccountType?        @default(FREE)
+  backups             Backup[]
+  backupHistories     BackupHistory[]
+  backupSchedules     BackupSchedule[]
+  breakTimes          BreakTime[]
+  breakTimeHistories  BreakTimeHistory[]
+  breakTimeSchedules  BreakTimeSchedule[]
+  breakTimeReports    BreakTimeReport[]
+  notifications       Notification[]
+  settings            Setting[]
+  // userSettings   UserSetting[]
+  userPreferences     UserPreference[]
+  leads               Lead[]
+  tasks               Task[]
+  messages            Message[]
+  files               File[]
+  calendars           Calendar[]
+  invoices            Invoice[]
+  payments            Payment[]
 
-  @@unique([email, username], name: "email_username_unique")
-  // create views and indexes for the user table
-  @@index([name], name: "name_index")
-  @@index([email], name: "company_email_index")
-  @@index([username], name: "username_index")
-  @@index([role], name: "role_index")
-  @@index([accountType], name: "accountType_index")
-  @@index([isVerified], name: "isVerified_index")
-  @@map("users")
+  Message Message[] @relation("Receiver")
+
+  DashboardSetting DashboardSetting[]
+}
+// USER ROLES
+
+model Roles {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
 }
 
-// Address Model
-model Address {
-  id      Int     @id @default(autoincrement())
-  lineOne String
-  lineTwo String? //Optional
-  city    String
-  state   String
-  country String
-  pincode String
-
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @db.Timestamp()
-
-  @@map("addresses")
+// activity log table
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  action      String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
 }
 
-// Api Logs for automatic logout system
-model UserApiLogs {
+// Login History table
+model LoginHistory {
   id        Int      @id @default(autoincrement())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  url       String
-  method    String
+  ipAddress String?
+  userAgent String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @db.Timestamp()
-
-  @@map("user_api_logs")
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 }
 
-// Company Model
-
-model Company {
-  id        Int     @id @default(autoincrement())
-  name      String
-  email     String
-  phone     String
-  type  AccountType @default(TRIAL)
-  address   String?
-  city      String?
-  state     String?
-  country   String?
-  pincode   String?
-  userId    Int
-  createdBy User    @relation("CreatedBy", fields: [userId], references: [id])
-  User User[]
+// REPORTS AND ANALYTICS
+model Report {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  reportType String?
+  reportData Json?
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt @db.Timestamp()
-  isVerified Boolean  @default(false)
-  isDeleted  Boolean  @default(false)
-  isBlocked  Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+}
 
-  @@map("companies")
+// DATA BACKUP AND RESTORE
+model Backup {
+  id              Int             @id @default(autoincrement())
+  userId          Int
+  backupType      String?
+  backupData      Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation(fields: [userId], references: [id])
+  backupHistories BackupHistory[]
+}
+
+model BackupHistory {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  backupId  Int
+  status    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  backup    Backup   @relation(fields: [backupId], references: [id])
+}
+
+model BackupSchedule {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  schedule  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// BREAK TIME MANAGEMENT
+model BreakTime {
+  id                 Int                @id @default(autoincrement())
+  userId             Int
+  startTime          DateTime?
+  endTime            DateTime?
+  duration           Int?
+  reason             String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id])
+  breakTimeHistories BreakTimeHistory[]
+}
+
+model BreakTimeHistory {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  breakTimeId Int
+  status      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  breakTime   BreakTime @relation(fields: [breakTimeId], references: [id])
+}
+
+// BREAK TIME SCHEDULES
+model BreakTimeSchedule {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  schedule  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// BREAK TIME REPORTS
+model BreakTimeReport {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  reportType String?
+  reportData Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+// NOTIFICATIONS
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String?
+  isRead    Boolean? @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// SETTINGS
+model Setting {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  settingKey   String?
+  settingValue String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+// USER PREFERENCES
+model UserPreference {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  preferenceKey   String?
+  preferenceValue String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+// LEADS
+model Lead {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  email     String?
+  phone     String?
+  status    String?
+  source    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// TASKS
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String?
+  description String?
+  status      String?
+  priority    String?
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+// MESSAGES
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  content    String?
+  status     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  // sender      User     @relation("Sender", fields: [senderId], references: [id])
+  receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
+
+  User User[]
+}
+
+// FILES
+model File {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  fileName  String?
+  fileType  String?
+  fileSize  Int?
+  filePath  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// CALENDAR
+model Calendar {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  eventTitle    String?
+  eventDate     DateTime?
+  eventTime     String?
+  eventLocation String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+}
+
+// INVOICES
+model Invoice {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  invoiceNumber String?
+  amount        Float?
+  status        String?
+  dueDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+
+  Payment Payment[]
+}
+
+// PAYMENTS
+model Payment {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  invoiceId   Int
+  amount      Float?
+  paymentDate DateTime?
+  status      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id])
+}
+
+// Dashboard Settings
+model DashboardSetting {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  settingKey   String?
+  settingValue String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
 }

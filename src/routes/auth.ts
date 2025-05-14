@@ -6,11 +6,11 @@ import { checkRole } from "../middlewares/checkRole";
 
 const authRoute:Router = Router();
 
-authRoute.post('/login',errorHandler(login));
-authRoute.post('/signup',[checkRole],errorHandler(signup))
-authRoute.get('/me',[authMiddleware],errorHandler(me))
+// authRoute.post('/login',errorHandler(login));
+// authRoute.post('/signup',[checkRole],errorHandler(signup))
+// authRoute.get('/me',[authMiddleware],errorHandler(me))
 
-authRoute.put('/change-password',[authMiddleware],errorHandler(changePassword))
+// authRoute.put('/change-password',[authMiddleware],errorHandler(changePassword))
 
 
 export default authRoute;

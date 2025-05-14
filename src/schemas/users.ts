@@ -3,6 +3,7 @@ import { z } from "zod";
 export const signupSchema = z.object({
   name: z.string(),
   email: z.string().email(),
+  role: z.number().nullable(),
   password: z
     .string()
     .regex(
@@ -25,6 +26,10 @@ export const findSchema = z.object({
           "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
       }
     ),
+});
+export const roleSchema = z.object({
+  name: z.string().nullable(),
+  description: z.string().nullable(),
 });
 
 export const changePasswordSchema = z.object({
