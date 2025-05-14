@@ -40,12 +40,14 @@ export const authMiddleware = async (
         id:payload.id
       },
       select:{
-        id:true,
-        role:true,
-        email:true,
-        username:true
+        id: true,
+        role: true,
+        email: true,
+        
       }
     })
+    // Finding Role from the Role Table
+  
   
     if(!user){
         return next(
@@ -58,8 +60,11 @@ export const authMiddleware = async (
     if(payload?.role !== user?.role){
       return next( new BadRequestException("The user role is mismatched",ErrorCodes.MISMATCHED_ROLE))
     }
-    req.user = user ;
-    
+    req.user = {
+      id: user.id,
+      role: user.role,
+      email: user.email?? "",
+    }
     next()
   } catch (error) {
     return next(

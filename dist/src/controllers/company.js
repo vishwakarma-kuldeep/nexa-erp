@@ -1,10 +1,10 @@
+"use strict";
 // import { Request, Response } from "express";
 // import { NotFoundException } from "../exceptions/notFound";
 // import { ErrorCodes } from "../exceptions/roots";
 // import { prismaClient } from "..";
 // import { BadRequestException } from "../exceptions/bad-request";
 // import { CreateCompanySchema } from "../schemas/company";
-
 // /**
 //  *
 //  * @param req
@@ -25,7 +25,6 @@
 //           id: req?.user?.id,
 //         },
 //       },
-
 //       User: {
 //         connect: {
 //           id: req?.user?.id,
@@ -36,7 +35,6 @@
 //   });
 //   res.json(company);
 // };
-
 // /**
 //  *
 //  * @param req
@@ -50,7 +48,6 @@
 //  *
 //  *
 //  */
-
 // export const changeCompanyType = async (req: Request, res: Response) => {
 //   const id = +req.params.id;
 //   const type = req.body.type;

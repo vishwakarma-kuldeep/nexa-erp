@@ -1,16 +1,12 @@
+"use strict";
 /**
  *   ==============================================  API LOG  ==============================================
  *   This middleware is used to log the API request (WHICH API IS HITTING BY WHOM)
- * 
- * 
+ *
+ *
  *   This middleware logs the API request, the user who hit the API, and the time the API was hit.
  */
-
-import { Request, Response, NextFunction } from "express";
-import { prismaClient } from "..";
-// import { APIError } from "../exceptions/api";
-import { ErrorCodes } from "../exceptions/roots";
-
+Object.defineProperty(exports, "__esModule", { value: true });
 // export const apiLog = async (req: Request, res: Response, next: NextFunction) => {
 //   try {
 //     const id = req?.user?.id;

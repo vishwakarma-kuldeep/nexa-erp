@@ -26,13 +26,7 @@ export const login: any = async (
         email: email,
       },
     });
-  } else {
-    user = await prismaClient.user.findUnique({
-      where: {
-        username: username,
-      },
-    });
-  }
+  } 
   if (!user) {
     throw new NotFoundException(
       "User does not exist!",
@@ -61,7 +55,7 @@ export const signup: any = async (
   next: NextFunction
 ) => {
   signupSchema.parse(req.body);
-  const { email, password, name, username, role } = req.body;
+  const { email, password, name, role } = req.body;
 
   if (role === "admin" || role === "superadmin") {
     throw new BadRequestException("Invalid role", ErrorCodes.INVALID_ROLE);
@@ -69,7 +63,7 @@ export const signup: any = async (
   const user = await prismaClient.user.findFirst({
     where: {
       email,
-      username,
+     
     },
   });
   if (user) {
@@ -84,7 +78,7 @@ export const signup: any = async (
       email,
       password: hash,
       name,
-      username,
+     
       role,
     },
   });
